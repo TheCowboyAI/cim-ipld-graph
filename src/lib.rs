@@ -98,6 +98,15 @@ pub struct ObjectNode {
     pub chunks: Vec<Cid>, // For large objects split into chunks
 }
 
+impl<T> Default for CidDag<T>
+where
+    T: Clone + Debug + Serialize,
+ {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> CidDag<T>
 where
     T: Clone + Debug + Serialize,
