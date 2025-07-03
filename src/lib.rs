@@ -6,12 +6,12 @@
 //! - The graph is acyclic (enforced by content addressing)
 //! - Used for both Event Store chains and Object Store references
 
-use cim_contextgraph::Component;
-use daggy::{Dag, NodeIndex, EdgeIndex, Walker};
 use cid::Cid;
+use cim_contextgraph::Component;
+use daggy::{Dag, EdgeIndex, NodeIndex, Walker};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
-use serde::{Serialize, Deserialize};
 
 /// Error types for CID DAG operations
 #[derive(Debug, Clone, thiserror::Error)]
@@ -101,7 +101,7 @@ pub struct ObjectNode {
 impl<T> Default for CidDag<T>
 where
     T: Clone + Debug + Serialize,
- {
+{
     fn default() -> Self {
         Self::new()
     }
@@ -149,9 +149,13 @@ where
 
     /// Add a causal edge (previous -> next)
     pub fn add_causal_edge(&mut self, previous: Cid, next: Cid) -> Result<(), CidDagError> {
-        let prev_idx = self.cid_index.get(&previous)
+        let prev_idx = self
+            .cid_index
+            .get(&previous)
             .ok_or(CidDagError::CidNotFound(previous))?;
-        let next_idx = self.cid_index.get(&next)
+        let next_idx = self
+            .cid_index
+            .get(&next)
             .ok_or(CidDagError::CidNotFound(next))?;
 
         let edge = CidEdge {
@@ -160,7 +164,8 @@ where
         };
 
         // This will fail if it creates a cycle (DAG property)
-        self.dag.add_edge(*prev_idx, *next_idx, edge)
+        self.dag
+            .add_edge(*prev_idx, *next_idx, edge)
             .map_err(|_| CidDagError::CycleDetected)?;
 
         // Update roots and leaves
@@ -172,9 +177,13 @@ where
 
     /// Add a reference edge (e.g., Event -> Object)
     pub fn add_reference(&mut self, from: Cid, to: Cid) -> Result<(), CidDagError> {
-        let from_idx = self.cid_index.get(&from)
+        let from_idx = self
+            .cid_index
+            .get(&from)
             .ok_or(CidDagError::CidNotFound(from))?;
-        let to_idx = self.cid_index.get(&to)
+        let to_idx = self
+            .cid_index
+            .get(&to)
             .ok_or(CidDagError::CidNotFound(to))?;
 
         let edge = CidEdge {
@@ -182,7 +191,8 @@ where
             metadata: HashMap::new(),
         };
 
-        self.dag.add_edge(*from_idx, *to_idx, edge)
+        self.dag
+            .add_edge(*from_idx, *to_idx, edge)
             .map_err(|_| CidDagError::CycleDetected)?;
 
         Ok(())
@@ -190,7 +200,8 @@ where
 
     /// Get a node by CID
     pub fn get_node(&self, cid: &Cid) -> Option<&CidNode<T>> {
-        self.cid_index.get(cid)
+        self.cid_index
+            .get(cid)
             .and_then(|idx| self.dag.node_weight(*idx))
     }
 
@@ -305,8 +316,7 @@ where
         let ancestors2 = self.ancestors(cid2);
 
         // Find first common ancestor
-        ancestors2.into_iter()
-            .find(|cid| ancestors1.contains(cid))
+        ancestors2.into_iter().find(|cid| ancestors1.contains(cid))
     }
 
     /// Convert to a ContextGraph representation
@@ -323,20 +333,29 @@ where
                 cid_to_node_id.insert(cid, node_id);
 
                 // Add CID as a component for easy lookup
-                let _ = graph.get_node_mut(node_id).unwrap()
+                let _ = graph
+                    .get_node_mut(node_id)
+                    .unwrap()
                     .add_component(CidReference(*cid));
             }
         }
 
         // Add all edges
-        for edge_idx in self.dag.raw_edges().iter().enumerate().map(|(i, _)| EdgeIndex::new(i)) {
+        for edge_idx in self
+            .dag
+            .raw_edges()
+            .iter()
+            .enumerate()
+            .map(|(i, _)| EdgeIndex::new(i))
+        {
             if let Some((src_idx, dst_idx)) = self.dag.edge_endpoints(edge_idx) {
-                if let (Some(&src_cid), Some(&dst_cid)) =
-                    (self.node_to_cid.get(&src_idx), self.node_to_cid.get(&dst_idx)) {
-
+                if let (Some(&src_cid), Some(&dst_cid)) = (
+                    self.node_to_cid.get(&src_idx),
+                    self.node_to_cid.get(&dst_idx),
+                ) {
                     if let (Some(&src_id), Some(&dst_id)) =
-                        (cid_to_node_id.get(&src_cid), cid_to_node_id.get(&dst_cid)) {
-
+                        (cid_to_node_id.get(&src_cid), cid_to_node_id.get(&dst_cid))
+                    {
                         if let Some(edge) = self.dag.edge_weight(edge_idx) {
                             graph.add_edge(src_id, dst_id, edge.clone()).ok();
                         }
