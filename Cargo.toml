@@ -11,7 +11,7 @@ categories = ["data-structures", "algorithms", "cryptography"]
 
 [dependencies]
 cim-contextgraph = { path = "../cim-contextgraph" }
-cim-ipld = { path = "../cim-ipld" }
+cim-ipld = { path = "../cim-domain/crates/cim-ipld" }
 daggy = "0.8"
 cid = { version = "0.11", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
