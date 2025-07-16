@@ -11,7 +11,7 @@ categories = ["data-structures", "algorithms", "cryptography"]
 
 [dependencies]
 cim-contextgraph = { path = "../cim-contextgraph" }
-cim-ipld = { git = "https://github.com/TheCowboyAI/cim-domain.git", branch = "main" }
+cim-ipld = { git = "https://github.com/TheCowboyAI/cim-ipld.git", branch = "main" }
 daggy = "0.8"
 cid = { version = "0.11", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
